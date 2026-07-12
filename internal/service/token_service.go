@@ -62,7 +62,7 @@ func (s *TokenService) GenerateAccessToken(user *models.User, sessionID string) 
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    issuerAuthServer,
+			Issuer:    s.cfg.App.URL,
 			ID:        uuid.New().String(),
 		},
 	}

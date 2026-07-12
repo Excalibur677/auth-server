@@ -318,12 +318,9 @@ func (s *OAuthProviderService) ExchangeCodeForToken(code, clientID, redirectURI,
 		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour
 	}
 
-	if err := s.tokenRepo.Create(accessToken); err != nil {
-		return nil, err
-	}
-
 	// If the client requested the "openid" scope, issue an OIDC id_token
-	// alongside the opaque access token.
+	// alongside the opaque access token. This happens before persisting the
+	// access token so a failure here doesn't leave an orphaned token row.
 	if slices.Contains([]string(authCode.Scopes), "openid") {
 		user, err := s.userRepo.FindByID(authCode.UserID)
 		if err != nil {
@@ -334,6 +331,10 @@ func (s *OAuthProviderService) ExchangeCodeForToken(code, clientID, redirectURI,
 			return nil, err
 		}
 		accessToken.IDToken = idToken
+	}
+
+	if err := s.tokenRepo.Create(accessToken); err != nil {
+		return nil, err
 	}
 
 	return accessToken, nil
